@@ -1,12 +1,13 @@
 GOPATH := $(CURDIR)
 export GOPATH
 
-all: agent
+all: log4go util search
 	
-agent:
+search:
 	go install search
 
-
 util:
-	go install util
+	go build util
 
+log4go:
+	go build log4go
