@@ -1,0 +1,18 @@
+package main
+
+import(
+  "server"
+  "handler/agthandler"
+  "net"
+)
+
+
+
+func main() {
+  s := server.Server{Cert: "zagent.pem",
+                   Prvkey:"zagent.pem",
+                   Handlers: make(map[string] func (*[]byte, *[]byte, *net.Conn) error)}
+
+  s.AddHandler("3", agthandler.Test_handler)
+  s.Run(":44443", false)
+}

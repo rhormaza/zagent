@@ -11,3 +11,6 @@ util:
 
 log4go:
 	go build log4go
+
+tcpserver:
+	go build tcpserver
