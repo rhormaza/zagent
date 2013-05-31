@@ -1,10 +1,14 @@
 GOPATH := $(CURDIR)
 export GOPATH
 
-all: log4go util search
+all: log4go util search main
+
+main:
+	go build -o zagent main
+	mv zagent bin/
 	
 search:
-	go install search
+	go build search
 
 util:
 	go build util

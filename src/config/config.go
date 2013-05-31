@@ -1,11 +1,12 @@
 package config
 
 type Config struct {
-    listenPort int
-    bindAddress string
+    ListenPort  int
+    BindAddress string
+    Log         string
 }
 
 
 func LoadConfig(confFile string) Config {
-    return Config{9000, "0.0.0.0"}
+    return Config{9000, "0.0.0.0", "zagent.log"}
 }

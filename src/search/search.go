@@ -1,55 +1,17 @@
-
-package main
+package search
 
 import (
     "os"
     "bytes"
     "regexp"
     "fmt"
-    "strconv"
     "crypto/sha256"
-//    "strings"
     "encoding/hex"
-    "encoding/json"
     "util"
 )
 
 // Logger always first!
 var log = util.SetupLogger("zagent.log", 2)
-
-var jsonBlob = []byte(`{
-    "jsonrpc": "2.0",
-    "method": "get_error",
-    "params": {
-        "pattern": [
-        [
-        "ERROR PATTERN",
-        "CLEAR PATTERN"
-        ],
-        [
-        ".*stopped.*",
-        ".*started.*"
-        ],
-        [
-        ".*hello.*",
-        ".*bye.*"
-        ],
-        [
-        ".*hola.*",
-        ".*chao.*"
-        ],
-        [
-        ".*foo.*",
-        ".*bar.*"
-        ]
-        ],
-        "filename": "/tmp/foo.txt",
-        "hash": "a SHA-256 hash",
-        "begin_pos": 0,
-        "end_pos": 1125899906842624 
-    },
-    "id": 2
-}`)
 
 type JsonObject struct {
     /*Fields start with Uppercase for JSON Marshalling */
@@ -88,7 +50,7 @@ type Query struct {
 }
 
 var hitSlices []Hit
-var mPattern = make(map[string] []Hit)
+var PatternHits = make(map[string] []Hit)
 
 //func readChunk(path string, beginPos int64, length int64) (buf *bytes.Buffer, err error) {
 func ReadChunk(path string, beginPos int64, length int64) (buffer []byte, err error) {
@@ -149,14 +111,14 @@ func doMatch(lineNumber int64, line string, jsonQuery *JsonObject) (hit bool) {
     for _, v := range jsonQuery.Params.Pattern {
         pattern := v[0] //Error pattern
         if m, _ := regexp.MatchString(pattern, line); m {
-            mPattern[pattern] = append(mPattern[pattern], Hit{line, lineNumber, 9999999})
+            PatternHits[pattern] = append(PatternHits[pattern], Hit{line, lineNumber, 9999999})
         }
     }
     return true
 
 }
 
-func processChunk(buffer []byte, beginPos int, length int, jsonInfo *JsonObject) {
+func ProcessChunk(buffer []byte, beginPos int, length int, jsonInfo *JsonObject) {
     /*
     TODO: Check for '\r' char in case of a windows box
           Check EOL during the split!
@@ -171,28 +133,28 @@ func processChunk(buffer []byte, beginPos int, length int, jsonInfo *JsonObject)
 }
 
 
-func main() {
-    //fmt.Println(">>>> ", config.LoadConfig("asas") )
-
-    var jsonObj JsonObject
-    err := json.Unmarshal(jsonBlob, &jsonObj)
-    if err != nil {
-        fmt.Println("error:", err)
-    }
-
-
-    last, _ := strconv.Atoi(os.Args[1])
-    buf, err := ReadChunk(jsonObj.Params.Filename, 0, int64(last))
-    processChunk(buf, 0, last, &jsonObj)
-    fmt.Println("+++++++++++++")
-    mdStr, _ := CalcSha256FromChunk("/tmp/foo.txt", 0, int64(last))
-    fmt.Println(">>>>>>>>> ", mdStr)
-    fmt.Println("+++++++++++++")
-    for k, v := range mPattern {
-        fmt.Println("k:", k, "v:", v)
-    }
-
-
-    //we need to close the logger to clear the buffers!
-    log.Close()
-}
+//func main() {
+//    //fmt.Println(">>>> ", config.LoadConfig("asas") )
+//
+//    var jsonObj JsonObject
+//    err := json.Unmarshal(jsonBlob, &jsonObj)
+//    if err != nil {
+//        fmt.Println("error:", err)
+//    }
+//
+//
+//    last, _ := strconv.Atoi(os.Args[1])
+//    buf, err := ReadChunk(jsonObj.Params.Filename, 0, int64(last))
+//    processChunk(buf, 0, last, &jsonObj)
+//    fmt.Println("+++++++++++++")
+//    mdStr, _ := CalcSha256FromChunk("/tmp/foo.txt", 0, int64(last))
+//    fmt.Println(">>>>>>>>> ", mdStr)
+//    fmt.Println("+++++++++++++")
+//    for k, v := range PatternHits {
+//        fmt.Println("k:", k, "v:", v)
+//    }
+//
+//
+//    //we need to close the logger to clear the buffers!
+//    log.Close()
+//}
