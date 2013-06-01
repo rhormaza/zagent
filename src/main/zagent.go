@@ -2,7 +2,6 @@ package main
 
 import (
     "os"
-    "fmt"
     "strconv"
     "encoding/json"
 ////////////
@@ -11,7 +10,7 @@ import (
     "config"
 )
 // Logger always first!
-var log = util.SetupLogger("zagent.log", 2)
+var log = util.SetupLogger("/tmp/zagent.log", 2)
 
 var jsonBlob = []byte(`{
     "jsonrpc": "2.0",
@@ -90,26 +89,24 @@ type JsonParams search.JsonParams
 var PatternHits = make(map[string] []search.Hit)
 
 func main() {
-    fmt.Println(">>>> ", config.LoadConfig("asas"), "args: ", os.Args )
+    log.Info("Args: %s and config:%s", os.Args, config.LoadConfig("asas"))
 
     var jsonObj search.JsonObject
     err := json.Unmarshal(jsonBlob, &jsonObj)
     if err != nil {
-        fmt.Println("error:", err)
+        log.Critical("error: %s", err)
     }
 
 
     last, _ := strconv.Atoi(os.Args[1])
     buf, err := search.ReadChunk(jsonObj.Params.Filename, 0, int64(last))
     search.ProcessChunk(buf, 0, last, &jsonObj)
-    fmt.Println("+++++++++++++")
     mdStr, _ := search.CalcSha256FromChunk("/tmp/foo.txt", 0, int64(last))
-    fmt.Println(">>>>>>>>> ", mdStr)
-    fmt.Println("+++++++++++++")
-    for k, v := range PatternHits {
-        fmt.Println("k:", k, "v:", v)
-    }
 
+    log.Info(">>>>>>>>> %s", mdStr)
+    for k, v := range PatternHits {
+        log.Info("k: %s and v: %s", k, v)
+    }
 
     //we need to close the logger to clear the buffers!
     log.Close()

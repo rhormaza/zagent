@@ -10,6 +10,7 @@ import (
 )
 
 var stdout io.Writer = os.Stdout
+var format string = FORMAT_SHORT 
 
 // This is the standard writer that prints to standard output.
 type ConsoleLogWriter chan *LogRecord
@@ -22,14 +23,9 @@ func NewConsoleLogWriter() ConsoleLogWriter {
 }
 
 func (w ConsoleLogWriter) run(out io.Writer) {
-	var timestr string
-	var timestrAt int64
-
+    // Using a new method to be able to set format
 	for rec := range w {
-		if at := rec.Created.UnixNano() / 1e9; at != timestrAt {
-			timestr, timestrAt = rec.Created.Format("01/02/06 15:04:05"), at
-		}
-		fmt.Fprint(out, "[", timestr, "] [", levelStrings[rec.Level], "] ", rec.Message, "\n")
+        fmt.Fprint(out, FormatLogRecord(format, rec))
 	}
 }
 
@@ -44,4 +40,10 @@ func (w ConsoleLogWriter) LogWrite(rec *LogRecord) {
 func (w ConsoleLogWriter) Close() {
 	close(w)
 	time.Sleep(50 * time.Millisecond) // Try to give console I/O time to complete
+}
+
+// Set the logging format (chainable).  Must be called before the first log
+// message is written.
+func (w ConsoleLogWriter) SetFormat(logFormat string) {
+	format = logFormat
 }

@@ -10,6 +10,19 @@ program (aka zagent) will be designed with the following structure
 |-- usr                 // User (zagent) data directory
 |   `-- cert            // Certificates directory
 |       `-- zagent.pem  // Certificate identifying this zagent
+|-- src
+|   |-- config
+|   |   `-- *.go files of this package!
+|   |-- log4go
+|   |   `-- *.go files of this package!
+|   |-- main
+|   |   `-- *.go files of this package!
+|   |-- search
+|   |   `-- *.go files of this package!
+|   |-- tcpserver
+|   |   `-- *.go files of this package!
+|   `-- util
+|   |   `-- *.go files of this package!
 
 
 

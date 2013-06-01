@@ -4,14 +4,13 @@ import (
     "os"
     "bytes"
     "regexp"
-    "fmt"
     "crypto/sha256"
     "encoding/hex"
     "util"
 )
 
 // Logger always first!
-var log = util.SetupLogger("zagent.log", 2)
+var log = util.GetLogger()
 
 type JsonObject struct {
     /*Fields start with Uppercase for JSON Marshalling */
@@ -126,35 +125,7 @@ func ProcessChunk(buffer []byte, beginPos int, length int, jsonInfo *JsonObject)
     eol := []byte{'\n'}
     for i, v := range bytes.Split(buffer, eol) {
         lineNumber := i + beginPos + 1 // line starts from 1, whereas i starts from 0
-        fmt.Println(lineNumber, " -> ", string(v), "len=", len(v))
         doMatch(int64(lineNumber), string(v), jsonInfo)
     }
-    fmt.Println("len=", len(buffer), "sha=", hex.EncodeToString(CalcSha256(buffer)))
+    log.Debug("buffer len: %d, buffer hash(sha):%s", len(buffer), hex.EncodeToString(CalcSha256(buffer)))
 }
-
-
-//func main() {
-//    //fmt.Println(">>>> ", config.LoadConfig("asas") )
-//
-//    var jsonObj JsonObject
-//    err := json.Unmarshal(jsonBlob, &jsonObj)
-//    if err != nil {
-//        fmt.Println("error:", err)
-//    }
-//
-//
-//    last, _ := strconv.Atoi(os.Args[1])
-//    buf, err := ReadChunk(jsonObj.Params.Filename, 0, int64(last))
-//    processChunk(buf, 0, last, &jsonObj)
-//    fmt.Println("+++++++++++++")
-//    mdStr, _ := CalcSha256FromChunk("/tmp/foo.txt", 0, int64(last))
-//    fmt.Println(">>>>>>>>> ", mdStr)
-//    fmt.Println("+++++++++++++")
-//    for k, v := range PatternHits {
-//        fmt.Println("k:", k, "v:", v)
-//    }
-//
-//
-//    //we need to close the logger to clear the buffers!
-//    log.Close()
-//}
