@@ -1,5 +1,7 @@
 package zjson
 
+// Put here all Json queries and results (succesfull and not)A
+// This can also be used for do Unit-Testing!
 var JsonBlobMap = map[string][]byte { 
     "searchlog_query": []byte(`{
         "jsonrpc": "2.0",

@@ -9,34 +9,15 @@ import (
     "encoding/hex"
     "zutil"
     "zjson"
+//    "reflect"
 )
 
 // Logger always first!
 var log = zutil.GetLogger()
 
 
-type Hit  struct {
-    LineText    string
-    LineNumber  int64
-    LineBegin   int64
-    //more metadata to hold?
-}
-
-type Pattern struct {
-    Pattern string
-    Hits    []Hit
-}
-
-type Query struct {
-    pattern     string
-    filename    string
-    hash        string
-    beginPos    int64
-    endPos      int64
-}
-
-var hitSlices []Hit
-var JsonResult = make(map[string] []Hit)
+// It holds the actual result!
+var JsonResult = make(map[string] []zjson.SearchLogHit)
 
 //func readChunk(path string, beginPos int64, length int64) (buf *bytes.Buffer, err error) {
 func ReadChunk(path string, beginPos int64, length int64) (buffer []byte, err error) {
@@ -106,7 +87,17 @@ func doMatch(lineNumber int64, line string, jsonParams *zjson.JsonParams) (hit b
             if col, ok := v.([]interface{}); ok {
                 if errPattern, ok := col[0].(string); ok {
                     if m, _ := regexp.MatchString(errPattern, line); m {
-                        JsonResult[errPattern] = append(JsonResult[errPattern], Hit{line, lineNumber, 9999999})
+                        JsonResult[errPattern] = append(JsonResult[errPattern], zjson.SearchLogHit{line, lineNumber, 9999999})
+                        // This could also be done with maps, to do so you need to define the a global variable
+                        // like : var _JsonResult = make(map[string] []map[string]string)
+                        //
+                        // And then put something like below in this very place! I prefer use *struct* though
+                        //_JsonResult[errPattern] = append(_JsonResult[errPattern], 
+                        //    map[string]string {
+                        //        "LineText" :  line,
+                        //        "LineNumber" : strconv.FormatInt(lineNumber, 10),  // See strconv docs
+                        //        "LineBegin" : "999", // FIXME: for now this should a real value
+                        //    })
                     }
                 } else {
                     log.Error("Json assertion failed")
@@ -143,8 +134,10 @@ func ProcessChunk(buffer []byte, beginPos int64, length int64, jsonParams *zjson
 }
 
 // Wrapper function that does all the processing. Function
-// gets at valid Json Result object to get input parameters.
-func Process(jsonParams *zjson.JsonParams) (interface {}) {
+// gets at valid Json Params object to get input parameters.
+//
+// TODO: return a valid JSON error if something goes wrong!!!
+func Process(jsonParams *zjson.JsonParams) (interface{}, zjson.JsonError) {//(zjson.JsonResult, zjson.JsonError) { //(interface {}) {
     log.Debug("Doing some Process")
  
     filename := (*jsonParams)["filename"]
@@ -174,5 +167,6 @@ func Process(jsonParams *zjson.JsonParams) (interface {}) {
     buf, _ := ReadChunk(filenameStr, beginPos, endPos)
     ProcessChunk(buf, beginPos, endPos, jsonParams)
 
-    return JsonResult
+    return JsonResult, nil // FIXME: return nil as en error is bad!
 }
+
