@@ -46,7 +46,8 @@ type JsonQuery struct {
 // }
 //
 
-type JsonResult map[string]interface{}
+//type JsonResult map[string]interface{}
+type JsonResult interface{}
 
 type JsonError map[string]interface{}
 
@@ -87,17 +88,20 @@ type JsonObject struct {
 
 // Struct use to return a searchlog hit!
 type SearchLogHit  struct {
-    LineText    string
-    LineNumber  int64
-    LineBegin   int64
+    LineText    string  `json:"linetext"`
+    LineNum     int64   `json:"linenum"`
+    //LineBegin   int64
     //more metadata to hold?
 }
 
 // Struct use to return a searchlog hit!
 // FIXME: delme?
 type SearchLogPattern struct {
-    Pattern string
-    Hits    []SearchLogHit
+    Filename    string                      `json:"filename"`
+    Hash        string                      `json:"hash"`
+    BeginPos    int64                       `json:"begin_pos"`
+    EndPos      int64                       `json:"endpos"`
+    Hits        map[string][]SearchLogHit   `json:"hits"`
 }
 
 // Struct use to return a searchlog hit!

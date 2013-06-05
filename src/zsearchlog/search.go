@@ -9,15 +9,11 @@ import (
     "encoding/hex"
     "zutil"
     "zjson"
-//    "reflect"
 )
 
 // Logger always first!
 var log = zutil.GetLogger()
 
-
-// It holds the actual result!
-var JsonResult = make(map[string] []zjson.SearchLogHit)
 
 //func readChunk(path string, beginPos int64, length int64) (buf *bytes.Buffer, err error) {
 func ReadChunk(path string, beginPos int64, length int64) (buffer []byte, err error) {
@@ -75,7 +71,7 @@ func CalcSha256FromChunk(path string, beginPos int64, length int64) (digestStr s
 }
 
 //func doMatch(lineNumber int64, line string, jsonParams *map[string]interface{}) (hit bool) {
-func doMatch(lineNumber int64, line string, jsonParams *zjson.JsonParams) (hit bool) {
+func doMatch(lineNumber int64, line string, jsonParams *zjson.JsonParams, hitsMap *map[string] []zjson.SearchLogHit) (hit bool) {
     // Let's check our JSON params first!
     if jsonParams == nil {
         return false //FIXME: add a proper error code!
@@ -87,7 +83,9 @@ func doMatch(lineNumber int64, line string, jsonParams *zjson.JsonParams) (hit b
             if col, ok := v.([]interface{}); ok {
                 if errPattern, ok := col[0].(string); ok {
                     if m, _ := regexp.MatchString(errPattern, line); m {
-                        JsonResult[errPattern] = append(JsonResult[errPattern], zjson.SearchLogHit{line, lineNumber, 9999999})
+                        //JsonResult[errPattern] = append(JsonResult[errPattern], zjson.SearchLogHit{line, lineNumber, 9999999})
+                        (*hitsMap)[errPattern] = append((*hitsMap)[errPattern], zjson.SearchLogHit{line, lineNumber})
+                        
                         // This could also be done with maps, to do so you need to define the a global variable
                         // like : var _JsonResult = make(map[string] []map[string]string)
                         //
@@ -118,19 +116,24 @@ func doMatch(lineNumber int64, line string, jsonParams *zjson.JsonParams) (hit b
 }
 
 //func ProcessChunk(buffer []byte, beginPos int, length int, jsonParams *map[string]interface{}) {
-func ProcessChunk(buffer []byte, beginPos int64, length int64, jsonParams *zjson.JsonParams) {
+func ProcessChunk(buffer []byte, beginPos int64, length int64, jsonParams *zjson.JsonParams) (hitsMap map[string] []zjson.SearchLogHit) {
     /*
     TODO: Check for '\r' char in case of a windows box
           Check EOL during the split!
     */
 
+    // It holds the actual result!
+    hitsMap = make(map[string] []zjson.SearchLogHit)
+
     eol := []byte{'\n'}
     _beginPos := int(beginPos)
     for i, v := range bytes.Split(buffer, eol) {
         lineNumber := i + _beginPos + 1 // line starts from 1, whereas i starts from 0
-        doMatch(int64(lineNumber), string(v), jsonParams)
+        doMatch(int64(lineNumber), string(v), jsonParams, &hitsMap)
     }
     log.Debug("buffer len: %d, buffer hash(sha):%s", len(buffer), hex.EncodeToString(CalcSha256(buffer)))
+
+    return
 }
 
 // Wrapper function that does all the processing. Function
@@ -138,8 +141,8 @@ func ProcessChunk(buffer []byte, beginPos int64, length int64, jsonParams *zjson
 //
 // TODO: return a valid JSON error if something goes wrong!!!
 func Process(jsonParams *zjson.JsonParams) (interface{}, zjson.JsonError) {//(zjson.JsonResult, zjson.JsonError) { //(interface {}) {
-    log.Debug("Doing some Process")
- 
+    log.Debug("Executing Process()")
+
     filename := (*jsonParams)["filename"]
     filenameStr, _ := filename.(string)
 
@@ -165,8 +168,16 @@ func Process(jsonParams *zjson.JsonParams) (interface{}, zjson.JsonError) {//(zj
     log.Debug("begin_pos: %d, end_pos: %d", beginPos, endPos)
 
     buf, _ := ReadChunk(filenameStr, beginPos, endPos)
-    ProcessChunk(buf, beginPos, endPos, jsonParams)
+    hits := ProcessChunk(buf, beginPos, endPos, jsonParams)
 
-    return JsonResult, nil // FIXME: return nil as en error is bad!
+    // This is the return value if all is successfull
+    result := new(zjson.SearchLogPattern) 
+    result.Filename = filenameStr
+    result.Hash = mdStr
+    result.BeginPos = beginPos
+    result.EndPos = 4611686018427387900
+    result.Hits = hits
+
+    return result, nil // FIXME: return nil as en error is bad!
 }
 

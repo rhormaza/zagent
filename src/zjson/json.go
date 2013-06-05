@@ -35,38 +35,17 @@ func EncodeJson(data interface{}) ([]byte){
 // This will encode a Json Successfully package, that is
 // a Json blob with "result" property.
 func EncodeJsonSuccess(data interface{}) ([]byte){
-    log.Debug("Encoding Json data: %s", data)
+    log.Debug("Encoding a success Json data")
 
     var reply JsonReplySuccess
     reply.Jsonrpc = JSONRPC_VERSION
     reply.Id = 1
-    // Asserting struct
-    if result, ok := data.(map[string][]SearchLogHit); ok {
-        log.Info("Attaching result to Json reply. Result is %s", result)
-        //
-        // Ugly thing to convert actual result "a particular" data structure into a JsonResult Type
-        // see: http://golang.org/doc/faq#convert_slice_of_interface
-        a := make(JsonResult)
-        for i, v := range result {
-            a[i] = v
-        }
-        reply.Result = &a
+
+    if _result, ok := data.(JsonResult); ok {
+        reply.Result = &_result
     } else {
         log.Critical("Error asserting output data")
     }
-    // This is the same than above in case of using maps instead of structs to return JsonResult
-    //if result, ok := data.(map[string][]map[string]string); ok {
-    //    log.Info("Attaching result to Json reply. Result is %s", result)
-    //    // Ugly thing to convert actual result "a particular" data structure in a JsonResult Type
-    //    a := make(JsonResult)
-    //    for i, v := range result {
-    //        a[i] = v
-    //    }
-    //    reply.Result = &a
-    //} else {
-    //    log.Critical("Error asserting output data")
-    //}
-
     jsonBlob, err := json.Marshal(reply)
     if err != nil {
         log.Error("Error %s encoding data: %s in Json", err, data)
@@ -74,4 +53,3 @@ func EncodeJsonSuccess(data interface{}) ([]byte){
     //return b, err
     return jsonBlob
 }
-
