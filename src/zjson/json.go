@@ -34,12 +34,12 @@ func EncodeJson(data interface{}) ([]byte){
 
 // This will encode a Json Successfully package, that is
 // a Json blob with "result" property.
-func EncodeJsonSuccess(data interface{}) ([]byte){
+func EncodeJsonSuccess(data interface{}, id int64) ([]byte){
     log.Debug("Encoding a success Json data")
 
     var reply JsonReplySuccess
     reply.Jsonrpc = JSONRPC_VERSION
-    reply.Id = 1
+    reply.Id = id
 
     if _result, ok := data.(JsonResult); ok {
         reply.Result = &_result

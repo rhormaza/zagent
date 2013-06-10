@@ -49,12 +49,12 @@ type JsonQuery struct {
 //type JsonResult map[string]interface{}
 type JsonResult interface{}
 
-type JsonError map[string]interface{}
+type JsonError interface{}
 
 type JsonReplySuccess struct {
-    Jsonrpc string                      // JSON-RPC version
-    Result  *JsonResult                 // TODO: explain!
-    Id      int64                       // Id of the JSON query
+    Jsonrpc string          `json:"jsonrpc"`          // JSON-RPC version
+    Result  *JsonResult     `json:"result"`          // TODO: explain!
+    Id      int64           `json:"id"`         // Id of the JSON query
 }
 
 type JsonReplyError struct {
@@ -90,6 +90,8 @@ type JsonObject struct {
 type SearchLogHit  struct {
     LineText    string  `json:"linetext"`
     LineNum     int64   `json:"linenum"`
+    Pattern     string  `json:"pattern"`
+    Type        string  `json:"type"` // clear or error
     //LineBegin   int64
     //more metadata to hold?
 }
@@ -99,7 +101,7 @@ type SearchLogHit  struct {
 type SearchLogPattern struct {
     Filename    string                      `json:"filename"`
     Hash        string                      `json:"hash"`
-    BeginPos    int64                       `json:"begin_pos"`
+    BeginPos    int64                       `json:"beginpos"` // This is around 4 exa bytes 10^18
     EndPos      int64                       `json:"endpos"`
     Hits        map[string][]SearchLogHit   `json:"hits"`
 }

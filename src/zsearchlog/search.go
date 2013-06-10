@@ -4,7 +4,7 @@ import (
     "os"
     "bytes"
     "regexp"
-    "strconv"
+    "strings"
     "crypto/sha256"
     "encoding/hex"
     "zutil"
@@ -13,6 +13,7 @@ import (
 
 // Logger always first!
 var log = zutil.GetLogger()
+
 
 
 //func readChunk(path string, beginPos int64, length int64) (buf *bytes.Buffer, err error) {
@@ -80,32 +81,41 @@ func doMatch(lineNumber int64, line string, jsonParams *zjson.JsonParams, hitsMa
     patternMatrix := (*jsonParams)["pattern"]
     if row, ok := patternMatrix.([]interface{}); ok {
         for _, v := range row {
+            
+            errClrPattern := make([]string, 2)
+            // At this point col has an array like ["ERROR_PATTERN", "CLEAR_PATTERN"]
             if col, ok := v.([]interface{}); ok {
-                if errPattern, ok := col[0].(string); ok {
-                    if m, _ := regexp.MatchString(errPattern, line); m {
-                        //JsonResult[errPattern] = append(JsonResult[errPattern], zjson.SearchLogHit{line, lineNumber, 9999999})
-                        (*hitsMap)[errPattern] = append((*hitsMap)[errPattern], zjson.SearchLogHit{line, lineNumber})
-                        
-                        // This could also be done with maps, to do so you need to define the a global variable
-                        // like : var _JsonResult = make(map[string] []map[string]string)
-                        //
-                        // And then put something like below in this very place! I prefer use *struct* though
-                        //_JsonResult[errPattern] = append(_JsonResult[errPattern], 
-                        //    map[string]string {
-                        //        "LineText" :  line,
-                        //        "LineNumber" : strconv.FormatInt(lineNumber, 10),  // See strconv docs
-                        //        "LineBegin" : "999", // FIXME: for now this should a real value
-                        //    })
-                    }
+                // Checking for the "Error" pattern first
+                if pattern, ok := col[0].(string); ok {
+                    errClrPattern[0] = pattern
                 } else {
                     log.Error("Json assertion failed")
                     return false
                 }
+
+                // Checking for the "Clear" pattern first
+                if pattern, ok := col[1].(string); ok {
+                    errClrPattern[1] = pattern
+                } else {
+                    log.Error("Json assertion failed")
+                    return false
+                }
+                
+                patternKey := strings.Join(errClrPattern, "<==>")
+                // Do matching
+                if m, _ := regexp.MatchString(errClrPattern[0], line); m {
+                    (*hitsMap)[patternKey] = append((*hitsMap)[patternKey], zjson.SearchLogHit{line, lineNumber, errClrPattern[0], "error"})
+                }
+                if m, _ := regexp.MatchString(errClrPattern[1], line); m {
+                    (*hitsMap)[patternKey] = append((*hitsMap)[patternKey], zjson.SearchLogHit{line, lineNumber, errClrPattern[1], "error"})
+                }
+                //if m, _ := regexp.MatchString(clearPattern, line); m {
+                //    (*hitsMap)[clearPattern] = append((*hitsMap)[clearPattern], zjson.SearchLogHit{line, lineNumber, clearPattern, "clear"})
+                //}
             } else {
                 log.Error("Json assertion failed")
                 return false
             }
-
         }
     } else {
         log.Error("Json assertion failed")
@@ -115,7 +125,6 @@ func doMatch(lineNumber int64, line string, jsonParams *zjson.JsonParams, hitsMa
 
 }
 
-//func ProcessChunk(buffer []byte, beginPos int, length int, jsonParams *map[string]interface{}) {
 func ProcessChunk(buffer []byte, beginPos int64, length int64, jsonParams *zjson.JsonParams) (hitsMap map[string] []zjson.SearchLogHit) {
     /*
     TODO: Check for '\r' char in case of a windows box
@@ -139,9 +148,17 @@ func ProcessChunk(buffer []byte, beginPos int64, length int64, jsonParams *zjson
 // Wrapper function that does all the processing. Function
 // gets at valid Json Params object to get input parameters.
 //
+// Main process that walk through file searching for patterns.
+//  - A SHA256 hash is calculated for the first 100 bytes
+//    of chunk text
+//  - If the provided hash matches calculated hash search 
+//    is skipped
+// 
 // TODO: return a valid JSON error if something goes wrong!!!
 func Process(jsonParams *zjson.JsonParams) (interface{}, zjson.JsonError) {//(zjson.JsonResult, zjson.JsonError) { //(interface {}) {
     log.Debug("Executing Process()")
+
+    var HASH_LIMIT int64 = 100 //only hash first 100 bytes
 
     filename := (*jsonParams)["filename"]
     filenameStr, _ := filename.(string)
@@ -150,33 +167,42 @@ func Process(jsonParams *zjson.JsonParams) (interface{}, zjson.JsonError) {//(zj
     // int's couldn't be assert!
     // Hence, the horrible workaround was to pass 
     // begin_pos and end_pos values as strings :-(
-    ___endPos := (*jsonParams)["end_pos"]
-    __endPos, _ := ___endPos.(string)
-    _endPos, _ := strconv.Atoi(__endPos)
+    //___endPos := (*jsonParams)["endpos"]
+    _endPos, _ := (*jsonParams)["endpos"].(float64)
     endPos := int64(_endPos)
 
-    ___beginPos := (*jsonParams)["begin_pos"]
-    __beginPos, _ := ___beginPos.(string)
-    _beginPos, _ := strconv.Atoi(__beginPos)
+    _beginPos, _ := (*jsonParams)["beginpos"].(float64)
     beginPos := int64(_beginPos)
 
     hash := (*jsonParams)["hash"]
     hashStr, _ := hash.(string)
 
-    mdStr, _ := CalcSha256FromChunk(filenameStr, beginPos, endPos)
-    log.Debug("Provided hash: %s and calculated hash: %s", hashStr, mdStr)
-    log.Debug("begin_pos: %d, end_pos: %d", beginPos, endPos)
-
-    buf, _ := ReadChunk(filenameStr, beginPos, endPos)
-    hits := ProcessChunk(buf, beginPos, endPos, jsonParams)
-
-    // This is the return value if all is successfull
+    mdStr, _ := CalcSha256FromChunk(filenameStr, beginPos, HASH_LIMIT)
     result := new(zjson.SearchLogPattern) 
-    result.Filename = filenameStr
-    result.Hash = mdStr
-    result.BeginPos = beginPos
-    result.EndPos = 4611686018427387900
-    result.Hits = hits
+    if hashStr == mdStr {
+        log.Debug("Hashes match. Given: %s Calculated: %s", hashStr, mdStr)
+
+        // This is the return value if all is successfull
+        result.Filename = filenameStr
+        result.Hash = mdStr
+        result.BeginPos = beginPos
+        result.EndPos = endPos
+        result.Hits = nil
+    } else {
+        log.Debug("Hashes differ. Given: %s Calculated: %s", hashStr, mdStr)
+
+        // If hashes are different we need to search the whole file
+        buf, _ := ReadChunk(filenameStr, 0, endPos)
+        hits := ProcessChunk(buf, beginPos, endPos, jsonParams)
+
+        // This is the return value if all is successfull
+        result.Filename = filenameStr
+        result.Hash = mdStr
+        result.BeginPos = beginPos
+        result.EndPos = 4611686018427387900
+        result.Hits = hits
+    }
+
 
     return result, nil // FIXME: return nil as en error is bad!
 }

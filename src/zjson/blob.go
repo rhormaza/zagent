@@ -30,9 +30,9 @@ var JsonBlobMap = map[string][]byte {
             ]
             ],
             "filename": "/tmp/foo.txt",
-            "hash": "a SHA-256 hash",
-            "end_pos": "999999999999999999", 
-            "begin_pos": "0"
+            "hash": "9d07b162e93d76901d07dfa53d755e98806f3d9a8ac765fe8ca47f34d71a4ebe",
+            "endpos": 110, 
+            "beginpos": 0
         },
         "id": 2
     }`),
