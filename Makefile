@@ -1,7 +1,7 @@
 GOPATH := $(CURDIR)
 export GOPATH
 
-all: log4go zutil zjson zsearchlog zrouter main
+all: log4go zutil zjson zsearchlog zrouter main ztcpserver
 
 main:
 	go build -o zagent main
