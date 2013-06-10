@@ -1,4 +1,4 @@
-package server
+package ztcpserver
 
 import (
   "crypto/tls"
