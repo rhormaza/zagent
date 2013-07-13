@@ -23,7 +23,7 @@ func checkErr(err error) {
 type Server struct {
   Cert, Prvkey string
   listener net.Listener
-  router *zrouter.RouterMap
+  Router *zrouter.RouterMap
 }
 
 
@@ -81,87 +81,73 @@ func (s *Server) Stop() error{
 
 
 type JsonParseError struct {
-  error msg
+  msg string
 }
+
 
 func (e *JsonParseError) Error() string {
   return e.msg
 }
 
 
-func getMethodParam(inputObj interface{}) ([]string, []string, error){
+func getMethodParam(inputObj interface{}) ([]string, map[string][]interface{}, error){
 
   method := ""
-  param := []string{}
+  var param map[string][]interface{}
 
-  jsonObj, ok = inputObj.(map[string]interface{})
+  jsonObj, ok := inputObj.(map[string]interface{})
   if !ok { // if failed to do type assertion
-     return []string{}, []string{}, JsonParseError{"Request is not a valid json string"}
+     return []string{}, map[string][]interface{}{}, &JsonParseError{"Request is not a valid json string"}
   }
   for k,v := range jsonObj {
-    if k == 'method' {
-      method = v
-    }
-    else if k == 'params' {
-      param = v
+    if k == "method" {
+      vv := v.(string)
+      method = vv
+    } else if k == "params" {
+      vv := v.(map[string][]interface{})
+      param = vv
     }
   }
-
   // method[0] is namespace, method[1] is mehtodname
   return strings.Split(method, "."), param, nil
-
 }
 
 func (s *Server) session(conn *net.Conn) {
-    defer (*conn).Close()
-    //var input, output []byte
+    defer (*conn).Close() 
     var input, output []byte
-
 
     if err := s.read_data(conn, &input); err != nil {
       log.Println(err)
-      s.Response(conn, err) // we don't care if the msg was sent successfully
+      s.Response(conn, err.Error()) 
       return
     }
 
-    if inputObj, err := json.DecodeJson(input); err != nil {
-      log.Println(err)
-      s.Response(conn, err) // we don't care if the msg was sent successfully
-      return
-    }
-
-    if method, param, err := getMethodParam(inputObj); err != nil {
-      log.Println(err)
-      s.Response(conn, err) // we don't care if the msg was sent successfully
-      return
-    }
-
-    if res, err := s.router.methodMap[method[0]][method[1]](param); err != nil {
-      log.Println(err)
-      s.Response(conn, err) // we don't care if the msg was sent successfully
-      return
-    }
-
-    if output, err := json.EncodeJson(res); err != nil {
-      log.Println(err)
-      s.Response(conn, err) // we don't care if the msg was sent successfully
-      return
-    }
-
-    /*
-    if _, ok := s.Handlers[code]; !ok {
-      log.Println("No such code") // TO-DO: need improve later
-      return
-    }
-
-    // call handler function
-    err = s.Handlers[code](&input, &output, conn)
+    inputObj, err := zjson.DecodeJson(input)
     if err != nil {
-      err_msg := "Failed to call handler function" 
-      s.Response(conn, err_msg) // we don't care if the msg was sent successfully
-      log.Println(err_msg) //TO-DO: need improve later
+      log.Println(err)
+      s.Response(conn, err.Error()) 
+      return
     }
-    */
+
+    method, param, err := getMethodParam(inputObj)
+    if err != nil {
+      log.Println(err)
+      s.Response(conn, err.Error()) 
+      return
+    }
+
+    res, err := (*s.Router)[method[0]][method[1]](param)
+    if err != nil {
+      log.Println(err)
+      s.Response(conn, err.Error())
+      return
+    }
+
+    if output, err = zjson.EncodeJson(res); err != nil {
+      log.Println(err)
+      s.Response(conn, err.Error())
+      return
+    }
 
     err = s.write_data(conn, &output)
     if err != nil {
@@ -173,6 +159,7 @@ func (s *Server) session(conn *net.Conn) {
 
 
 func (s *Server) Run(laddr string, non_routine bool) {
+  log.Println("start")
   cert, err := tls.LoadX509KeyPair(s.Cert, s.Prvkey)
   checkErr(err)
 
@@ -181,7 +168,9 @@ func (s *Server) Run(laddr string, non_routine bool) {
   checkErr(err)
 
   for {
+    log.Println("in for")
     conn, err := s.listener.Accept()
+    log.Println("accepted")
     if err != nil {
       log.Println(err)
       continue

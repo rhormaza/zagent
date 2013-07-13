@@ -13,7 +13,7 @@ ERROR = "test.info_error"
 REQ = { 
         "jsonrpc": "2.0",
         "method": None,
-        "params": [],
+        "params": {},
         "id": 2
       }
 
@@ -31,7 +31,7 @@ def create_socket(host, port):
            time.sleep(1)
        else:
            break
-    return ssl.wrap_socket(s, ssl_version=ssl.PROTOCOL_SSLv3 , keyfile="client.pem",
+    return ssl.wrap_socket(s, ssl_version=ssl.PROTOCOL_TLSv1, keyfile="client.pem",
                               certfile="client.pem")
 
 
@@ -59,8 +59,7 @@ if __name__ == '__main__':
             print "IP doesn't specifiy"
             sys.exit(-1)
         ip = sys.argv[1]
-        request(ip, 44443, SUCCESS)
-        request(ip, 44443, ERROR)
+        request(ip, 44443, "status.info")
     except Exception, e:
         sys.stderr.write("Exception: %s" % str(e))
         sys.exit(-1)

@@ -2,24 +2,19 @@ package zrouter
 
 import (
   //"zsearchlog"
-	"zjson"
+	//"zjson"
   "zstatus"
 )
 
+//type MethodMap map[string] func (*zjson.JsonParams) (interface {}, error)
+type MethodMap map[string] func (map[string][]interface{}) (interface {}, error)
+type RouterMap map[string] MethodMap
 
-type RouterMap struct {
-  methodMap map[string] map[string] func(*zjson.JsonParams) (interface {}, zjson.JsonError)
+var ZrouterMap RouterMap = RouterMap {
+                "status": MethodMap{
+                            "info": zstatus.GetAgentInfo,
+                          },
 }
-
-
-ZrouterMap := RouterMap{
-                         {
-                           "status":
-                                 {
-                                   "info": zstatus.GetAgentInfo,
-                                 },
-                         },
-                       }
 
 
 
