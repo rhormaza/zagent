@@ -21,11 +21,11 @@ func main() {
     //s.AddHandler("3", agthandler.Test_handler)
     s.Run(":44443", false)
 
-
     /*
     jsonReply :=  zjson.DecodeJson(zjson.JsonBlobMap["searchlog_query"])
+
+    //m := search.Process(jsonReply.Params)
     m, _ := zrouter.RouterMap["searchlog"](jsonReply.Params)
-    log.Critical("jsonBlob:%s", zjson.EncodeJsonSuccess(m, jsonReply.Id))
 
     log.Critical("jsonBlob:%s", zjson.EncodeJsonSuccess(m))
     */

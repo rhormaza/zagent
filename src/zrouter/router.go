@@ -1,12 +1,25 @@
 package zrouter
 
 import (
-    "zsearchlog"
+  //"zsearchlog"
 	"zjson"
+  "zstatus"
 )
 
-//var RouterMap = map[string] func(*zjson.JsonParams) (interface {}) {
-var RouterMap = map[string] func(*zjson.JsonParams) (interface {}, zjson.JsonError) {
-    "searchlog":  zsearchlog.Process,
+
+type RouterMap struct {
+  methodMap map[string] map[string] func(*zjson.JsonParams) (interface {}, zjson.JsonError)
 }
+
+
+ZrouterMap := RouterMap{
+                         {
+                           "status":
+                                 {
+                                   "info": zstatus.GetAgentInfo,
+                                 },
+                         },
+                       }
+
+
 

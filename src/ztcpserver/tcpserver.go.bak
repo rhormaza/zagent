@@ -11,6 +11,6 @@ func main() {
                    Prvkey:"zagent.pem",
                    Handlers: make(map[string] func (*[]byte, *[]byte, *net.Conn) error)}
 
-  s.AddHandler("3", agthandler.Test_handler)
+  //s.AddHandler("3", agthandler.Test_handler)
   s.Run(":44443", false)
 }
