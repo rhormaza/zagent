@@ -4,7 +4,7 @@ import (
   "runtime"
   "strconv"
   "zconfig"
-  "zjson"
+  //"zjson"
 )
 
 const VERSION = "1.0.2"
@@ -18,7 +18,9 @@ type AgentInfo struct {
 
 
 
-func GetAgentInfo(*zjson.JsonParams) (interface {}, zjson.JsonError) {
+//func GetAgentInfo(*zjson.JsonParams) (interface {}, error) {
+
+func GetAgentInfo(map[string][]interface{}) (interface {}, error) {
   os := runtime.GOOS // get system type
 
   //TODO: fix config later

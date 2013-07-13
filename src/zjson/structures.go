@@ -15,7 +15,9 @@ package zjson
 //
 // Struct fields start with Uppercase for JSON Marshalling
 // All JSON query and procedure should comply with this format.
-type JsonParams map[string]interface{}
+
+//type JsonParams map[string]interface{}
+type JsonParams map[string][]interface{}
 
 type JsonQuery struct {
     Jsonrpc string                      // JSON-RPC version
@@ -49,7 +51,14 @@ type JsonQuery struct {
 //type JsonResult map[string]interface{}
 type JsonResult interface{}
 
-type JsonError interface{}
+type JsonError struct{
+  err string
+}
+
+func (e *JsonError) Error() string {
+  return e.err
+}
+
 
 type JsonReplySuccess struct {
     Jsonrpc string          `json:"jsonrpc"`          // JSON-RPC version

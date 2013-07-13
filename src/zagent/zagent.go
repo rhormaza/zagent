@@ -2,12 +2,13 @@ package main
 
 import (
     "os"
-    "net"
+    //"net"
     "zutil"
     "zconfig"
     //"zjson"
     //"zrouter"
     "ztcpserver"
+    "zrouter"
 )
 
 // Logger always first!
@@ -16,7 +17,7 @@ var log = zutil.SetupLogger("/tmp/zagent.log", 2)
 func main() {
     log.Info("Args: %s and config:%s", os.Args, zconfig.LoadConfig("asas"))
     s := ztcpserver.Server{ Cert: "zagent.pem", Prvkey:"zagent.pem",
-                 Handlers: make(map[string] func (*[]byte, *[]byte, *net.Conn) error)}
+                 Router: &zrouter.ZrouterMap }
 
     //s.AddHandler("3", agthandler.Test_handler)
     s.Run(":44443", false)
