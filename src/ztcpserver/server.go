@@ -50,7 +50,7 @@ func (s *Server) read_data( conn *net.Conn, data *[]byte ) error {
 
 func (s *Server) write_data( conn *net.Conn, data *[]byte ) error{
   var (
-    size = len(*data)
+    size = len(*data) 
     written = 0
   )
 
@@ -90,27 +90,30 @@ func (e *JsonParseError) Error() string {
 }
 
 
-func getMethodParam(inputObj interface{}) ([]string, map[string][]interface{}, error){
+func getMethodParam(inputObj interface{}) ([]string, map[string]interface{}, error){
 
   method := ""
-  var param map[string][]interface{}
+  var param map[string]interface{}
 
+  log.Println(inputObj)
   jsonObj, ok := inputObj.(map[string]interface{})
+  log.Println(jsonObj)
   if !ok { // if failed to do type assertion
-     return []string{}, map[string][]interface{}{}, &JsonParseError{"Request is not a valid json string"}
+     return []string{}, map[string]interface{}{}, &JsonParseError{"Request is not a valid json string"}
   }
   for k,v := range jsonObj {
     if k == "method" {
       vv := v.(string)
       method = vv
     } else if k == "params" {
-      vv := v.(map[string][]interface{})
+      vv := v.(map[string]interface{})
       param = vv
     }
   }
   // method[0] is namespace, method[1] is mehtodname
   return strings.Split(method, "."), param, nil
 }
+
 
 func (s *Server) session(conn *net.Conn) {
     defer (*conn).Close() 
@@ -143,34 +146,39 @@ func (s *Server) session(conn *net.Conn) {
       return
     }
 
+    log.Println(res)
     if output, err = zjson.EncodeJson(res); err != nil {
       log.Println(err)
       s.Response(conn, err.Error())
       return
     }
+    
+    output = append(output, "\r\n\r\n"...)
+    log.Println("before write")
 
     err = s.write_data(conn, &output)
+    log.Println(&output)
+    log.Println(output)
+
     if err != nil {
       log.Println(err)
       return
     }
-
+    log.Println("Done")
 }
 
 
 func (s *Server) Run(laddr string, non_routine bool) {
-  log.Println("start")
   cert, err := tls.LoadX509KeyPair(s.Cert, s.Prvkey)
   checkErr(err)
 
   config := tls.Config{Certificates: []tls.Certificate{cert}}
+
   s.listener, err = tls.Listen("tcp", laddr, &config)
   checkErr(err)
 
   for {
-    log.Println("in for")
     conn, err := s.listener.Accept()
-    log.Println("accepted")
     if err != nil {
       log.Println(err)
       continue

@@ -13,7 +13,7 @@ const (
 )
 
 
-func DecodeJson(jsonBlob []byte) (jsonObj JsonObject, err error) {
+func DecodeJson(jsonBlob []byte) (jsonObj interface{}, err error) {
     log.Debug("Decoding data into Json")
     if err = json.Unmarshal(jsonBlob, &jsonObj);  err != nil {
         log.Error("Error %s decoding Json: %s in data", err, jsonBlob)

@@ -10,17 +10,15 @@ import (
 const VERSION = "1.0.2"
 
 type AgentInfo struct {
-  jsonrpc string
-  id int
-  result map[string] string
+  Jsonrpc string            `json:"jsonrpc"`
+  ID int                    `json:"id"`
+  Result map[string] string `json:"result"`
 }
-
-
 
 
 //func GetAgentInfo(*zjson.JsonParams) (interface {}, error) {
 
-func GetAgentInfo(map[string][]interface{}) (interface {}, error) {
+func GetAgentInfo(map[string]interface{}) (interface {}, error) {
   os := runtime.GOOS // get system type
 
   //TODO: fix config later
@@ -28,10 +26,10 @@ func GetAgentInfo(map[string][]interface{}) (interface {}, error) {
   port := strconv.Itoa(config.ListenPort)
   
   agent_info := AgentInfo{ 
-                           jsonrpc: "2.0",
-                           id: 2,
-                           result: map[string]string{
-                             "version": VERSION,
+                           Jsonrpc: "2.0",
+                           ID: 2,
+                           Result: map[string]string{
+                             "version": VERSION, 
                              "os": os,
                              "port": port,
                            },
