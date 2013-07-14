@@ -1,6 +1,5 @@
 bin/*
 pkg/*
 log/*
-*.pem
 *.log
 .DS_Store
