@@ -16,8 +16,8 @@ package zjson
 // Struct fields start with Uppercase for JSON Marshalling
 // All JSON query and procedure should comply with this format.
 
-//type JsonParams map[string]interface{}
-type JsonParams map[string][]interface{}
+type JsonParams map[string]interface{}
+//type JsonParams map[string][]interface{}
 
 type JsonQuery struct {
     Jsonrpc string                      // JSON-RPC version
@@ -51,25 +51,23 @@ type JsonQuery struct {
 //type JsonResult map[string]interface{}
 type JsonResult interface{}
 
-type JsonError struct{
-  err string
-}
+type JsonError interface{}
 
-func (e *JsonError) Error() string {
-  return e.err
-}
-
+//type JsonError struct{
+//  Errcode int64   `json:"code"`
+//  Errmsg  string
+//}
 
 type JsonReplySuccess struct {
-    Jsonrpc string          `json:"jsonrpc"`          // JSON-RPC version
-    Result  *JsonResult     `json:"result"`          // TODO: explain!
+    Jsonrpc string          `json:"jsonrpc"`    // JSON-RPC version
+    Result  *JsonResult     `json:"result"`     // TODO: explain!
     Id      int64           `json:"id"`         // Id of the JSON query
 }
 
 type JsonReplyError struct {
-    Jsonrpc string                      // JSON-RPC version
-    Error   *JsonError                  // TODO: explain!
-    Id      int64                       // Id of the JSON query
+    Jsonrpc string          `json:"jsonrpc"`   // JSON-RPC version
+    Error   *JsonError      `json:"error"`    // TODO: explain!
+    Id      int64           `json:"id"`        // Id of the JSON query
 }
 
 type JsonReply struct {
@@ -85,15 +83,16 @@ type JsonObject struct {
 
     Method  *string                      // Method to be executed
     Params  *JsonParams                 // Arguments/Parameters of the method provided (It could be empty)
-    
-    Result  *JsonResult                 // TODO: explain!
-    Error   *JsonError                  // TODO: explain!
-    //Result  *map[string]interface{}     // TODO: explain!
-    //Error   *map[string]interface{}     // TODO: explain!
 }
 
 // As convention we will use the a Preffix of the 
 // package that will use this. 
+
+// This might be merged to JsonError directly
+type Err struct {
+    Errcode int64   `json:"code"`
+    Errmsg  string  `json:"message"`
+}
 
 // Struct use to return a searchlog hit!
 type SearchLogHit  struct {
@@ -125,3 +124,11 @@ type SearchLogQuery struct {
     endPos      int64
 }
 
+
+// Agent status struct
+// Note that the name should use NamespaceMethod
+type StatusInfo struct { 
+    Version string  `json:"version"` 
+    Os      string  `json:"os"`
+    Port    int64   `json:"port"`
+}

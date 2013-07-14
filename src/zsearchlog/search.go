@@ -155,7 +155,7 @@ func ProcessChunk(buffer []byte, beginPos int64, length int64, jsonParams *zjson
 //    is skipped
 // 
 // TODO: return a valid JSON error if something goes wrong!!!
-func Process(jsonParams *zjson.JsonParams) (interface{}, zjson.JsonError) {//(zjson.JsonResult, zjson.JsonError) { //(interface {}) {
+func Process(jsonParams *zjson.JsonParams) (interface{}, error) {//(zjson.JsonResult, zjson.JsonError) { //(interface {}) {
     log.Debug("Executing Process()")
 
     var HASH_LIMIT int64 = 100 //only hash first 100 bytes
