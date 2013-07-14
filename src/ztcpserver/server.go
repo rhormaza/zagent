@@ -134,9 +134,8 @@ func (s *Server) Stop() error{
 func (s *Server) processQuery(conn *net.Conn) {
     defer func() {
         if x := recover(); x != nil {
-            log.Critical("Panic error!")
-            err := zjson.Err{-10001, "error!!!"}
-            output, _ := zjson.EncodeJsonFail(err, 1)
+            log.Critical("Panic call: There was a problem processing the query!")
+            output, _ := zjson.EncodeJsonFail(zjson.Err{-10001, "error!!!"}, 1)
             output = append(output, END_OF_JSON...)
             s.write_data(conn, &output) 
         }
