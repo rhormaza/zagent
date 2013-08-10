@@ -2,25 +2,22 @@ package main
 
 import (
     "os"
-    //"net"
     "zutil"
-    "zconfig"
-    //"zjson"
-    //"zrouter"
     "ztcpserver"
-    "zrouter"
 )
 
-// Logger always first!
-var log = zutil.SetupLogger("/tmp/zagent.log", 2)
-
 func main() {
-    log.Info("Args: %s and config:%s", os.Args, zconfig.LoadConfig("asas"))
-    s := ztcpserver.Server { Cert: "certs/zagent_server.pem", Prvkey:"certs/zagent_server.key",
-                 Router: &zrouter.ZrouterMap }
+    // Load configuration file
+    zutil.LoadConfig(os.Args)
 
-    //s.AddHandler("3", agthandler.Test_handler)
-    s.Run(":44443", false)
+    // Logger always first!
+    log := zutil.SetupLogger(zutil.GetConf().LogPath, zutil.GetConf().LogLevel)
+
+    server := ztcpserver.Server {
+                Cert    : zutil.GetConf().CertFilePemPath,
+                Prvkey  : zutil.GetConf().CertFileKeyPath,
+            }
+    server.Run(zutil.GetConf().ListenAddressAndPort, false)
 
     // we need to close the logger to clear the buffers!
     log.Close()

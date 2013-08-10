@@ -5,9 +5,15 @@ all: main
 
 main:
 	go install zagent
-	
-zsearchlog:
-	go build zsearchlog
+
+zrouter:
+	go build zrouter
+
+zstatus:
+	go build zstatus
+
+zsearch:
+	go build zsearch
 
 zutil:
 	go build zutil
@@ -17,9 +23,6 @@ log4go:
 
 zjson:
 	go build zjson
-
-zrouter:
-	go build zrouter
 
 ztcpserver:
 	go build ztcpserver

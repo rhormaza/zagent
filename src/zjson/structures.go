@@ -50,7 +50,6 @@ type JsonQuery struct {
 
 //type JsonResult map[string]interface{}
 type JsonResult interface{}
-
 type JsonError interface{}
 
 //type JsonError struct{
@@ -70,17 +69,9 @@ type JsonReplyError struct {
     Id      int64           `json:"id"`        // Id of the JSON query
 }
 
-type JsonReply struct {
-    Jsonrpc string                      // JSON-RPC version
-    Result  *JsonResult                 // TODO: explain!
-    Error   *JsonError                  // TODO: explain!
-    Id      int64                       // Id of the JSON query
-}
-
 type JsonObject struct {
     Jsonrpc string                      // JSON-RPC version
     Id      int64                       // Id of the JSON query
-
     Method  *string                      // Method to be executed
     Params  *JsonParams                 // Arguments/Parameters of the method provided (It could be empty)
 }
@@ -113,17 +104,6 @@ type SearchLogPattern struct {
     EndPos      int64                       `json:"endpos"`
     Hits        map[string][]SearchLogHit   `json:"hits"`
 }
-
-// Struct use to return a searchlog hit!
-// FIXME: delme?
-type SearchLogQuery struct {
-    pattern     string
-    filename    string
-    hash        string
-    beginPos    int64
-    endPos      int64
-}
-
 
 // Agent status struct
 // Note that the name should use NamespaceMethod

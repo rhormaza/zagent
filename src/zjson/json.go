@@ -6,7 +6,8 @@ import (
 )
 
 // Logger always first!
-var log = zutil.SetupLogger("/tmp/zagent.log", 2)
+//var log = zutil.SetupLogger("/tmp/zagent.log", zutil.GetConf().Log)
+var log = zutil.GetLogger()
 
 // FIXME: move?
 const (
@@ -14,18 +15,9 @@ const (
 )
 
 
-// Deprecated?
-func DecodeJson(jsonBlob []byte) (jsonObj interface{}, err error) {
-    log.Debug("Decoding data into Json")
-    if err = json.Unmarshal(jsonBlob, &jsonObj);  err != nil {
-        log.Error("Error %s decoding Json: %s in data", err, jsonBlob)
-    }
-    return
-}
-
 // It should be renamed to DEcodeJson()
 // This method will return unmarshalled object from the json blob received 
-func DecodeJson2(jsonBlob []byte) (jsonObj JsonObject, err error) {
+func DecodeJson(jsonBlob []byte) (jsonObj JsonObject, err error) {
     log.Debug("Decoding data into Json")
     if err = json.Unmarshal(jsonBlob, &jsonObj);  err != nil {
         log.Error("Error %s decoding Json: %s in data", err, jsonBlob)

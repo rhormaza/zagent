@@ -10,7 +10,8 @@ import (
     "zutil"
 )
 
-var log = zutil.SetupLogger("/tmp/zagent.log", 2)
+//var log = zutil.SetupLogger("/tmp/zagent.log", zutil.GetConf().Log)
+var log = zutil.GetLogger()
 
 const BUFFSIZE = 1024
 const TIMEOUT = 5
@@ -25,9 +26,9 @@ func checkErr(err error) {
 
 
 type Server struct {
-    Cert, Prvkey string
+    Cert    string
+    Prvkey  string
     listener net.Listener
-    Router *zrouter.RouterMap
 }
 
 func (s *Server) read_data( conn *net.Conn, data *[]byte ) error {
@@ -45,7 +46,7 @@ func (s *Server) read_data( conn *net.Conn, data *[]byte ) error {
         if numBytesRecv > LEN_END_OF_JSON {
 
             *data = append(*data, buffer[0:numBytesRecv]...)
-            log.Debug(*data)
+            log.Finest(*data)
 
             // Get last LEN_END_OF_JSON bytes to confirm end of JSON data.
             last_four := string((*data)[(len(*data) - LEN_END_OF_JSON):])
@@ -80,6 +81,7 @@ func (s *Server) write_data( conn *net.Conn, data *[]byte ) error{
 }
 
 func (s *Server) Run(listenAddr string, non_routine bool) {
+
     cert, err := tls.LoadX509KeyPair(s.Cert, s.Prvkey)
     checkErr(err)
 
@@ -88,6 +90,7 @@ func (s *Server) Run(listenAddr string, non_routine bool) {
     s.listener, err = tls.Listen("tcp", listenAddr, &config)
     checkErr(err)
 
+    log.Info("Listing connections at %s", listenAddr)
     for {
         conn, err := s.listener.Accept()
         if err != nil {
@@ -149,7 +152,7 @@ func (s *Server) processQuery(conn *net.Conn) {
         return
     }
 
-    jsonObj, err := zjson.DecodeJson2(input)
+    jsonObj, err := zjson.DecodeJson(input)
     if err != nil {
         log.Error("Error decoding JSON data: %s", err)
         o, _ := zjson.EncodeJsonFail(err, 1)
@@ -171,7 +174,7 @@ func (s *Server) processQuery(conn *net.Conn) {
         return
     }
 
-    log.Info(result)
+    log.Finest(result)
     // At this point method required, ran sucessfully, hence we return success
     if output, err = zjson.EncodeJsonSuccess(result, (jsonObj.Id)); err != nil {
         log.Info(err)
@@ -183,7 +186,7 @@ func (s *Server) processQuery(conn *net.Conn) {
     log.Debug("About to write data back")
 
     err = s.write_data(conn, &output)
-    log.Debug(output)
+    log.Finest(output)
 
     if err != nil {
         log.Error("Error writing JSON data back: %s", err)
@@ -236,100 +239,3 @@ func (s *Server) processQuery(conn *net.Conn) {
 //    log.Close()
 //
 //}
-
-
-
-/* FIXME: really needed?*/
-
-// Deprecated?
-type JsonParseError struct {
-  msg string
-}
-
-
-// Deprecated?
-func (e *JsonParseError) Error() string {
-  return e.msg
-}
-
-
-// Deprecated?
-func getMethodParam(inputObj interface{}) ([]string, map[string]interface{}, error){
-
-  method := ""
-  var param map[string]interface{}
-
-  log.Info(inputObj)
-  jsonObj, ok := inputObj.(map[string]interface{})
-  log.Info(jsonObj)
-  if !ok { // if failed to do type assertion
-     return []string{}, map[string]interface{}{}, &JsonParseError{"Request is not a valid json string"}
-  }
-  for k,v := range jsonObj {
-    if k == "method" {
-      vv := v.(string)
-      method = vv
-    } else if k == "params" {
-      vv := v.(map[string]interface{})
-      param = vv
-    }
-  }
-  // method[0] is namespace, method[1] is mehtodname
-  return strings.Split(method, "."), param, nil
-}
-
-
-// Deprecated?
-func (s *Server) session(conn *net.Conn) {
-    defer (*conn).Close() 
-    var input, output []byte
-
-    if err := s.read_data(conn, &input); err != nil {
-      log.Info(err)
-      s.Response(conn, err.Error()) 
-      return
-    }
-
-    inputObj, err := zjson.DecodeJson(input)
-    if err != nil {
-      log.Info(err)
-      s.Response(conn, err.Error()) 
-      return
-    }
-
-    method, param, err := getMethodParam(inputObj)
-    if err != nil {
-      log.Info(err)
-      s.Response(conn, err.Error()) 
-      return
-    }
-
-    res, err := (*s.Router)[method[0]][method[1]](param)
-    if err != nil {
-      log.Info(err)
-      s.Response(conn, err.Error())
-      return
-    }
-
-    log.Info(res)
-    if output, err = zjson.EncodeJson(res); err != nil {
-      log.Info(err)
-      s.Response(conn, err.Error())
-      return
-    }
-    
-    output = append(output, END_OF_JSON...)
-    log.Info("before write")
-
-    err = s.write_data(conn, &output)
-    log.Info(&output)
-    log.Info(output)
-
-    if err != nil {
-      log.Info(err)
-      return
-    }
-    log.Info("Done")
-}
-
-
