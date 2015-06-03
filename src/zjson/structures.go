@@ -112,3 +112,11 @@ type StatusInfo struct {
     Os      string  `json:"os"`
     Port    int64   `json:"port"`
 }
+
+
+type ExtractLog struct {
+    BeginPos    int64       `json:"beginpos"`
+    EndPos      int64       `json:"endpos"`
+    Filename    string      `json:"filename"`
+    Lines       []string    `json:"lines"`
+}

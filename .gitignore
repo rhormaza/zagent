@@ -3,3 +3,7 @@ pkg/*
 log/*
 *.log
 .DS_Store
+
+*.swp
+*.swn
+.*.sw*

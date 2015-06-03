@@ -15,6 +15,9 @@ var Router RouterMap = RouterMap {
     "search": MethodMap {
         "log": zsearch.Log, // Method *must* follow defined signature
     },
+    "log": MethodMap {
+        "extract": zsearch.Extract, // Method *must* follow defined signature
+    },
 
     // _status_ namespace
     "status": MethodMap {

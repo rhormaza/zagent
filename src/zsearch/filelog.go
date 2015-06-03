@@ -63,7 +63,6 @@ func calcSha256FromChunkBackward(path string, beginPos int64, chunkLength int64)
 
 }
 
-
 //
 // This will read a chunk of "length" bytes of the file "path" starting from "beginPos"
 //
@@ -276,17 +275,27 @@ func Log(jsonParams *zjson.JsonParams) (interface{}, error) {//(zjson.JsonResult
 
         length := endPos - beginPos
         buf, _ := readChunk(filenameStr, beginPos, length)
-        hits := ProcessChunk(buf, beginPos, length, jsonParams)
+        if len(buf) == 0 {
+            // If we are here, that most likely means we found the end of the file.
+            result.Filename = filenameStr
+            result.Hash = recvHashStr // send same hash back!
+            result.BeginPos = beginPos - HASH_LIMIT // go back
+            result.EndPos = beginPos // rewind the beginPos pointer
+            // Null, None or nil means NO hits!
+            result.Hits = nil
+        } else {
+            hits := ProcessChunk(buf, beginPos, length, jsonParams)
 
-        // Calc last "HASH_LIMIT" bytes hash!
-        retHashStr, _ := calcSha256FromChunkBackward(filenameStr, logFileStats.ReadEndPos, HASH_LIMIT)
+            // Calc last "HASH_LIMIT" bytes hash!
+            retHashStr, _ := calcSha256FromChunkBackward(filenameStr, logFileStats.ReadEndPos, HASH_LIMIT)
 
-        // This is the return value if all is successfull
-        result.Filename = filenameStr
-        result.Hash = retHashStr
-        result.BeginPos = beginPos
-        result.EndPos = endPos
-        result.Hits = hits
+            // This is the return value if all is successfull
+            result.Filename = filenameStr
+            result.Hash = retHashStr
+            result.BeginPos = beginPos
+            result.EndPos = endPos
+            result.Hits = hits
+        }
 
     // HASH_NO_APPLY would probably never be truth, just here for preventing issues.
     case HASH_NO_APPLY, HASH_DIFFER:
@@ -295,6 +304,8 @@ func Log(jsonParams *zjson.JsonParams) (interface{}, error) {//(zjson.JsonResult
         length := endPos
         // If hashes are different we need to search the whole file
         buf, _ := readChunk(filenameStr, 0, length)
+        // FIXME(raul): len(buf) could be zero...if so most likely file
+        // is empty! check and update here accordingly.
         hits := ProcessChunk(buf, 0, length, jsonParams)
         // Calc last "HASH_LIMIT" bytes hash!
         retHashStr, _ := calcSha256FromChunkBackward(filenameStr, logFileStats.ReadEndPos, HASH_LIMIT)
@@ -307,7 +318,7 @@ func Log(jsonParams *zjson.JsonParams) (interface{}, error) {//(zjson.JsonResult
         result.Hits = hits
     }
 
-    log.Finest("Result from search is:\n%s", result)
+    log.Finest("Result from Log() is:\n%s", result)
     return result, nil // FIXME: return nil as en error is bad!
 }
 
@@ -315,3 +326,56 @@ func Log(jsonParams *zjson.JsonParams) (interface{}, error) {//(zjson.JsonResult
 
 // TODO: implement rounding when getting intervals that will be in the
 // middle of a line. We need to search till previou EOL or next EOL
+
+
+// This should inplement a log extraction method requested by user.
+// That is the user request the chunk of a particular log for reading
+// TODO(raul): Decide whether lines or positions while be used as params.
+func Extract(jsonParams *zjson.JsonParams) (interface{}, error) {
+    log.Debug("Initiating the execution of Extract()")
+
+    //FIXME(raul): this is need as ReadChunk method uses this variable
+    //this should then be refactored as it does not make much sense.
+    //Maybe passing a reference is better or write a simpler
+    //ReadChunk() method.
+    logFileStats = new(LogFileMetaData)
+
+    filename := (*jsonParams)["filename"]
+    filenameStr, _ := filename.(string)
+
+    // Ugly and stupid hack, because the passing
+    // int's couldn't be assert!
+    // Hence, the horrible workaround was to pass
+    // begin_pos and end_pos values as strings :-(
+    //___endPos := (*jsonParams)["endpos"]
+    _endPos, _ := (*jsonParams)["endpos"].(float64)
+    endPos := int64(_endPos)
+
+    _beginPos, _ := (*jsonParams)["beginpos"].(float64)
+    beginPos := int64(_beginPos)
+
+    result := new(zjson.ExtractLog)
+    result.Filename = filenameStr
+    result.BeginPos = beginPos
+    result.EndPos = endPos
+
+    // TODO(raul): put here logic to get chunk!
+    buf, _ := readChunk(filenameStr, beginPos, endPos - beginPos)
+    log.Finest("Read buffer: %s", buf)
+    if len(buf) == 0 {
+        result.Lines = []string{}
+    } else {
+        eol := []byte{'\n'}
+        lines := bytes.Split(buf, eol)
+        for _, v := range lines {
+        //for i, v := range lines {
+            //lineNumber := i + _beginPos + 1 // line starts from 1, whereas i starts from 0
+            result.Lines = append(result.Lines, string(v))
+        }
+    }
+
+    log.Finest("Lines found:%s", result.Lines)
+
+    log.Finest("Result from Extract() is:\n%s", result)
+    return result, nil // FIXME: return nil as en error is bad!
+}
